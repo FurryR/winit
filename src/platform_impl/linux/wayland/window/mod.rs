@@ -186,9 +186,9 @@ impl Window {
         // `set_ime_allowed(true)` can immediately enable them.
         for seat_state in state.seats.values() {
             if let Some(text_input) = &seat_state.text_input {
-                eprintln!("[winit] pre-populating text_input for new window");
-                window_state.text_input_entered(text_input);
+                window_state.lock().unwrap().text_input_entered(text_input);
             }
+        }
         }
 
         // Add the window and window requests into the state.
@@ -624,10 +624,6 @@ impl Window {
 
         let changed = window_state.ime_allowed() != allowed;
         let applied = window_state.set_ime_allowed(allowed);
-        eprintln!(
-            "[winit] set_ime_allowed(allowed={allowed}): changed={changed}, applied={applied}, text_inputs={}",
-            window_state.text_inputs_len(),
-        );
         if changed && applied {
             let event = WindowEvent::Ime(if allowed { Ime::Enabled } else { Ime::Disabled });
             self.window_events_sink.lock().unwrap().push_window_event(event, self.window_id);

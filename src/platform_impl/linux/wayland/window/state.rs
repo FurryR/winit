@@ -1031,14 +1031,11 @@ impl WindowState {
             text_input.commit();
         }
 
-        eprintln!("[winit-cnt] WindowState::set_ime_allowed(allowed={allowed}): text_inputs={}, applied={applied}", self.text_inputs.len());
-
         applied
     }
 
     /// Set the IME position.
     pub fn set_ime_cursor_area(&self, position: LogicalPosition<u32>, size: LogicalSize<u32>) {
-        eprintln!("[winit-cnt] WindowState::set_ime_cursor_area: text_inputs={}", self.text_inputs.len());
         // FIXME: This won't fly unless user will have a way to request IME window per seat, since
         // the ime windows will be overlapping, but winit doesn't expose API to specify for
         // which seat we're setting IME position.
@@ -1129,10 +1126,6 @@ impl WindowState {
 
     /// Register text input on the top-level.
     #[inline]
-    pub fn text_inputs_len(&self) -> usize {
-        self.text_inputs.len()
-    }
-
     pub fn text_input_entered(&mut self, text_input: &ZwpTextInputV3) {
         if !self.text_inputs.iter().any(|t| t == text_input) {
             self.text_inputs.push(text_input.clone());

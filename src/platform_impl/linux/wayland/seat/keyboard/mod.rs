@@ -85,15 +85,10 @@ impl Dispatch<WlKeyboard, KeyboardData, WinitState> for WinitState {
                     let window = window.lock().unwrap();
                     if let Some(text_input) = &text_input {
                         if window.ime_allowed() {
-                            eprintln!("[winit] keyboard enter: sending enable+commit for ime_allowed window");
                             text_input.enable();
                             text_input.set_content_type_by_purpose(window.ime_purpose());
                             text_input.commit();
-                        } else {
-                            eprintln!("[winit] keyboard enter: window ime_allowed=false, skipping enable");
                         }
-                    } else {
-                        eprintln!("[winit] keyboard enter: no text_input on seat");
                     }
                 }
 
