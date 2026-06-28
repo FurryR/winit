@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use calloop::timer::{TimeoutAction, Timer};
 use calloop::{LoopHandle, RegistrationToken};
-use tracing::{info, warn};
+use tracing::warn;
 
 use sctk::reexports::client::protocol::wl_keyboard::{
     Event as WlKeyboardEvent, KeyState as WlKeyState, KeymapFormat as WlKeymapFormat, WlKeyboard,
@@ -85,15 +85,15 @@ impl Dispatch<WlKeyboard, KeyboardData, WinitState> for WinitState {
                     let window = window.lock().unwrap();
                     if let Some(text_input) = &text_input {
                         if window.ime_allowed() {
-                            info!("keyboard enter: sending enable+commit for ime_allowed window");
+                            eprintln!("[winit] keyboard enter: sending enable+commit for ime_allowed window");
                             text_input.enable();
                             text_input.set_content_type_by_purpose(window.ime_purpose());
                             text_input.commit();
                         } else {
-                            info!("keyboard enter: window ime_allowed=false, skipping enable");
+                            eprintln!("[winit] keyboard enter: window ime_allowed=false, skipping enable");
                         }
                     } else {
-                        info!("keyboard enter: no text_input on seat");
+                        eprintln!("[winit] keyboard enter: no text_input on seat");
                     }
                 }
 
