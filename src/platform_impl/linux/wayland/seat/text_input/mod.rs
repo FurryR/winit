@@ -152,7 +152,14 @@ impl Dispatch<ZwpTextInputV3, TextInputData, WinitState> for TextInputState {
 
                 // Deduplicate: skip if the preedit hasn't changed since last time.
                 if let Some(ref preedit) = pending_preedit {
-                    if text_input_data.last_sent_preedit.as_ref() != Some(preedit) {
+                    let changed = text_input_data.last_sent_preedit.as_ref() != Some(preedit);
+                    eprintln!(
+                        "[ime] Done preedit={:?} last={:?} changed={}",
+                        preedit.text,
+                        text_input_data.last_sent_preedit.as_ref().map(|p| &p.text),
+                        changed,
+                    );
+                    if changed {
                         let cursor_range = preedit
                             .cursor_begin
                             .map(|b| (b, preedit.cursor_end.unwrap_or(b)));
