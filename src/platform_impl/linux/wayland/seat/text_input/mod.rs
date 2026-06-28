@@ -145,24 +145,26 @@ impl Dispatch<ZwpTextInputV3, TextInputData, WinitState> for TextInputState {
                     state
                         .events_sink
                         .push_window_event(WindowEvent::Ime(Ime::Commit(text)), window_id);
+
+                    // After a commit the preedit is gone, so clear the last sent.
+                    text_input_data.last_sent_preedit = None;
                 }
 
-                // Send preedit.
-                if let Some(preedit) = pending_preedit {
-                    let cursor_range =
-                        preedit.cursor_begin.map(|b| (b, preedit.cursor_end.unwrap_or(b)));
+                // Deduplicate: skip if the preedit hasn't changed since last time.
+                if let Some(ref preedit) = pending_preedit {
+                    if text_input_data.last_sent_preedit.as_ref() != Some(preedit) {
+                        let cursor_range = preedit
+                            .cursor_begin
+                            .map(|b| (b, preedit.cursor_end.unwrap_or(b)));
 
-                    state.events_sink.push_window_event(
-                        WindowEvent::Ime(Ime::Preedit(preedit.text, cursor_range)),
-                        window_id,
-                    );
+                        state.events_sink.push_window_event(
+                            WindowEvent::Ime(Ime::Preedit(preedit.text.clone(), cursor_range)),
+                            window_id,
+                        );
+
+                        text_input_data.last_sent_preedit = Some(preedit.clone());
+                    }
                 }
-
-                // The zwp_text_input_v3 protocol requires the client to commit after
-                // every `done` event. If we skip this, the compositor (KWin) may
-                // detect a protocol violation and disconnect, producing a broken pipe
-                // error on the next `connection.flush()`.
-                text_input.commit();
             },
             TextInputEvent::DeleteSurroundingText { .. } => {
                 // Not handled.
@@ -203,9 +205,13 @@ pub struct TextInputDataInner {
 
     /// The preedit to submit on `done`.
     pending_preedit: Option<Preedit>,
+
+    /// The last preedit sent to the application, for deduplication.
+    last_sent_preedit: Option<Preedit>,
 }
 
 /// The state of the preedit.
+#[derive(Clone, PartialEq)]
 struct Preedit {
     text: String,
     cursor_begin: Option<usize>,
