@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use ahash::AHashMap;
-use tracing::warn;
+use tracing::{info, warn};
 
 use sctk::reexports::client::backend::ObjectId;
 use sctk::reexports::client::protocol::wl_seat::WlSeat;
@@ -149,10 +149,12 @@ impl SeatHandler for WinitState {
             // some compositors only send `enter` *after* receiving an `enable()`
             // request — causing a protocol deadlock.
             if let Some(text_input) = &seat_state.text_input {
+                info!("text_input created for seat, registering with existing windows");
                 for (_, window_mutex) in self.windows.get_mut() {
                     let mut window = window_mutex.lock().unwrap();
                     window.text_input_entered(text_input);
                     if window.ime_allowed() {
+                        info!("ime_allowed=true, sending proactive enable+commit from new_capability");
                         text_input.enable();
                         text_input.set_content_type_by_purpose(window.ime_purpose());
                         text_input.commit();

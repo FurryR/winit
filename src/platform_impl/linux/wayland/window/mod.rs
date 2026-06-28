@@ -14,7 +14,7 @@ use sctk::reexports::protocols::xdg::activation::v1::client::xdg_activation_v1::
 use sctk::shell::xdg::window::{Window as SctkWindow, WindowDecorations};
 use sctk::shell::WaylandSurface;
 
-use tracing::warn;
+use tracing::{info, warn};
 
 use crate::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Position, Size};
 use crate::error::{ExternalError, NotSupportedError, OsError as RootOsError};
@@ -186,6 +186,7 @@ impl Window {
         // `set_ime_allowed(true)` can immediately enable them.
         for seat_state in state.seats.values() {
             if let Some(text_input) = &seat_state.text_input {
+                info!("pre-populating text_input for new window");
                 window_state.text_input_entered(text_input);
             }
         }
@@ -621,7 +622,13 @@ impl Window {
     pub fn set_ime_allowed(&self, allowed: bool) {
         let mut window_state = self.window_state.lock().unwrap();
 
-        if window_state.ime_allowed() != allowed && window_state.set_ime_allowed(allowed) {
+        let changed = window_state.ime_allowed() != allowed;
+        let applied = window_state.set_ime_allowed(allowed);
+        info!(
+            "set_ime_allowed(allowed={allowed}): changed={changed}, applied={applied}, text_inputs={}",
+            window_state.text_inputs_len(),
+        );
+        if changed && applied {
             let event = WindowEvent::Ime(if allowed { Ime::Enabled } else { Ime::Disabled });
             self.window_events_sink.lock().unwrap().push_window_event(event, self.window_id);
             self.event_loop_awakener.ping();

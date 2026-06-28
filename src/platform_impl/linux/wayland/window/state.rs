@@ -1126,6 +1126,10 @@ impl WindowState {
 
     /// Register text input on the top-level.
     #[inline]
+    pub fn text_inputs_len(&self) -> usize {
+        self.text_inputs.len()
+    }
+
     pub fn text_input_entered(&mut self, text_input: &ZwpTextInputV3) {
         if !self.text_inputs.iter().any(|t| t == text_input) {
             self.text_inputs.push(text_input.clone());
