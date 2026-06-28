@@ -186,9 +186,8 @@ impl Window {
         // `set_ime_allowed(true)` can immediately enable them.
         for seat_state in state.seats.values() {
             if let Some(text_input) = &seat_state.text_input {
-                window_state.lock().unwrap().text_input_entered(text_input);
+                window_state.text_input_entered(text_input);
             }
-        }
         }
 
         // Add the window and window requests into the state.

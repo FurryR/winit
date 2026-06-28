@@ -157,6 +157,12 @@ impl Dispatch<ZwpTextInputV3, TextInputData, WinitState> for TextInputState {
                         window_id,
                     );
                 }
+
+                // The zwp_text_input_v3 protocol requires the client to commit after
+                // every `done` event. If we skip this, the compositor (KWin) may
+                // detect a protocol violation and disconnect, producing a broken pipe
+                // error on the next `connection.flush()`.
+                text_input.commit();
             },
             TextInputEvent::DeleteSurroundingText { .. } => {
                 // Not handled.
