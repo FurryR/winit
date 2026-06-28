@@ -182,6 +182,14 @@ impl Window {
         // XXX Do initial commit.
         window.commit();
 
+        // Register existing seat text_inputs so that a subsequent
+        // `set_ime_allowed(true)` can immediately enable them.
+        for seat_state in state.seats.values() {
+            if let Some(text_input) = &seat_state.text_input {
+                window_state.text_input_entered(text_input);
+            }
+        }
+
         // Add the window and window requests into the state.
         let window_state = Arc::new(Mutex::new(window_state));
         let window_id = super::make_wid(&surface);

@@ -18,6 +18,7 @@ use crate::keyboard::ModifiersState;
 
 use crate::platform_impl::common::xkb::Context;
 use crate::platform_impl::wayland::event_loop::sink::EventSink;
+use crate::platform_impl::wayland::seat::text_input::ZwpTextInputV3Ext;
 use crate::platform_impl::wayland::state::WinitState;
 use crate::platform_impl::wayland::{self, DeviceId, WindowId};
 
@@ -74,6 +75,22 @@ impl Dispatch<WlKeyboard, KeyboardData, WinitState> for WinitState {
                     },
                     None => return,
                 };
+
+                // Proactively enable text_input when keyboard focus enters a window.
+                // The compositor may not have received `enable()` from the initial
+                // `set_ime_allowed(true)` call if the window didn't yet have keyboard
+                // focus at that time.
+                let text_input = seat_state.text_input.clone();
+                if let Some(window) = state.windows.get_mut().get(&window_id) {
+                    let window = window.lock().unwrap();
+                    if let Some(text_input) = &text_input {
+                        if window.ime_allowed() {
+                            text_input.enable();
+                            text_input.set_content_type_by_purpose(window.ime_purpose());
+                            text_input.commit();
+                        }
+                    }
+                }
 
                 // Drop the repeat, if there were any.
                 keyboard_state.current_repeat = None;
