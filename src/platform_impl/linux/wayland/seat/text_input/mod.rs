@@ -126,25 +126,29 @@ impl Dispatch<ZwpTextInputV3, TextInputData, WinitState> for TextInputState {
                     None => return,
                 };
 
-                // Clear preedit, unless all we'll be doing next is sending a new preedit.
-                if text_input_data.pending_commit.is_some()
-                    || text_input_data.pending_preedit.is_none()
-                {
+                // Take pending state so it's consumed exactly once.
+                let pending_commit = text_input_data.pending_commit.take();
+                let pending_preedit = text_input_data.pending_preedit.take();
+
+                // Send `Commit` (with a preedit-clear first, if there is any
+                // preedit to clear).
+                if let Some(text) = pending_commit {
+                    // Only clear preedit when there was one to clear.
+                    // Sending an unconditional Preedit("", None) for every
+                    // `done` that has no content creates an infinite loop:
+                    //   SetMarkedText("") → cursor update → set_ime_cursor_area
+                    //   → commit → done → SetMarkedText("") → …
                     state.events_sink.push_window_event(
                         WindowEvent::Ime(Ime::Preedit(String::new(), None)),
                         window_id,
                     );
-                }
-
-                // Send `Commit`.
-                if let Some(text) = text_input_data.pending_commit.take() {
                     state
                         .events_sink
                         .push_window_event(WindowEvent::Ime(Ime::Commit(text)), window_id);
                 }
 
                 // Send preedit.
-                if let Some(preedit) = text_input_data.pending_preedit.take() {
+                if let Some(preedit) = pending_preedit {
                     let cursor_range =
                         preedit.cursor_begin.map(|b| (b, preedit.cursor_end.unwrap_or(b)));
 
